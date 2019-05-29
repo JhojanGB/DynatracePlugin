@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?><plugin xmlns:tag0="http://apache.org/cordova/ns/plugins/1.0" id="dynatrace-cordova-plugin" version="7.2.4">
+  <name>Dynatrace</name>
+  <description>Dynatrace Cordova Plugin</description>
+  <hook src="scripts/update-platform.js" type="after_prepare"/>
+  <hook src="scripts/close-log.js" type="after_build"/>
+  <hook src="scripts/close-log.js" type="after_run"/>
+  <platform name="ios">
+    <framework src="libsqlite3.dylib"/>
+    <framework src="CoreLocation.framework"/>
+    <framework src="CoreTelephony.framework"/>
+    <framework src="Security.framework"/>
+    <framework src="SystemConfiguration.framework"/>
+    <framework src="libz.dylib"/>
+    <framework src="libc++.dylib"/>
+    <framework src="MessageUI.framework"/>
+    <framework src="WebKit.framework"/>
+    <header-file src="files/iOS/Dynatrace.h"/>
+    <source-file framework="true" src="files/iOS/libDynatrace.a"/>
+    <config-file parent="/*" target="config.xml">
+      <feature name="DynatraceCordovaPlugin">
+        <param name="ios-package" value="DynatraceCordovaPlugin"/>
+      </feature>
+    </config-file>
+    <header-file src="other/DynatraceCordovaPlugin.h"/>
+    <source-file src="other/DynatraceCordovaPlugin.m"/>
+    <js-module src="other/DynatraceCordovaPlugin.js" name="dynatraceMobile">
+      <clobbers target="dynatraceMobile"/>
+    </js-module>
+  </platform>
+  <platform name="android">
+    <lib-file src="files/Android/deps/Dynatrace.jar"/>
+    <source-file src="other/DynatraceCordovaPlugin.java" target-dir="src/com/dynatrace/cordova/plugin"/>
+    <config-file parent="/*" target="config.xml">
+      <feature name="DynatraceCordovaPlugin">
+        <param name="android-package" value="com.dynatrace.cordova.plugin.DynatraceCordovaPlugin"/>
+      </feature>
+    </config-file>
+    <js-module src="other/DynatraceCordovaPlugin.js" name="dynatraceMobile">
+      <clobbers target="dynatraceMobile"/>
+    </js-module>
+    <hook src="scripts/update-build-android.js" type="after_compile"/>
+    <hook src="scripts/update-build-android.js" type="before_deploy"/>
+  </platform>
+  <platform name="windows"/>
+</plugin>

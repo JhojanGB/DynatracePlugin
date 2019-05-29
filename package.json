@@ -1,0 +1,78 @@
+{
+  "_from": "dynatrace-cordova-plugin",
+  "_id": "dynatrace-cordova-plugin@7.2.4-1005",
+  "_inBundle": false,
+  "_integrity": "sha512-B+Wppfkss/yBUqoTDpguge9k4ggvqDQEJIZT2NTe2i1latNjDnt1BbDBYLA4P5NRCpZj87/Y64zSR6fLTBLRBg==",
+  "_location": "/dynatrace-cordova-plugin",
+  "_phantomChildren": {},
+  "_requested": {
+    "type": "tag",
+    "registry": true,
+    "raw": "dynatrace-cordova-plugin",
+    "name": "dynatrace-cordova-plugin",
+    "escapedName": "dynatrace-cordova-plugin",
+    "rawSpec": "",
+    "saveSpec": null,
+    "fetchSpec": "latest"
+  },
+  "_requiredBy": [
+    "#USER",
+    "/"
+  ],
+  "_resolved": "https://registry.npmjs.org/dynatrace-cordova-plugin/-/dynatrace-cordova-plugin-7.2.4-1005.tgz",
+  "_shasum": "5c40704dff116a395f59f11c531dbeb8f481f5cc",
+  "_spec": "dynatrace-cordova-plugin",
+  "_where": "C:\\CordovaDynaT\\pruebaDynaTrace",
+  "author": {
+    "name": "Dynatrace"
+  },
+  "bundleDependencies": false,
+  "cordova": {
+    "id": "dynatrace-cordova-plugin",
+    "platforms": [
+      "ios",
+      "android",
+      "windows"
+    ]
+  },
+  "dependencies": {
+    "jsdom": "^14.0.0",
+    "request": "2.79.0"
+  },
+  "deprecated": false,
+  "description": "This plugin gives you the ability to use the Dynatrace instrumentation in your hybrid application (Cordova, Ionic, ..). It uses the Mobile Agent, the JavaScript Agent and the Javascript Bridge. The Mobile Agent will give you all device specific values containing lifecycle information and the Javascript Bridge will allow you to manually instrument your JavaScript/TypeScript code out of the box (Typescript definitions included). The JavaScript Agent will cover the network calls and will automatically detect them.",
+  "devDependencies": {
+    "babel-polyfill": "^6.23.0",
+    "chai": "^3.5.0",
+    "chai-as-promised": "^6.0.0",
+    "cordova": "^8.1.2",
+    "fs-extra": "^2.1.2",
+    "ionic": "^3.12.0",
+    "mocha": "^3.2.0",
+    "rewire": "^2.5.2",
+    "shelljs": "^0.7.7",
+    "sinon": "^2.3.5"
+  },
+  "files": [
+    "files/*",
+    "plugin.xml",
+    "README.md",
+    "other/*",
+    "scripts/*",
+    "typings/*",
+    "package.json"
+  ],
+  "keywords": [
+    "Dynatrace",
+    "Mobile",
+    "Android",
+    "iOS",
+    "Cordova",
+    "Performance",
+    "Monitoring",
+    "Ionic"
+  ],
+  "license": "private",
+  "name": "dynatrace-cordova-plugin",
+  "version": "7.2.4-1005"
+}
