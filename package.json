@@ -22,7 +22,6 @@
   "_resolved": "https://registry.npmjs.org/dynatrace-cordova-plugin/-/dynatrace-cordova-plugin-7.2.4-1005.tgz",
   "_shasum": "5c40704dff116a395f59f11c531dbeb8f481f5cc",
   "_spec": "dynatrace-cordova-plugin",
-  "_where": "C:\\CordovaDynaT\\pruebaDynaTrace",
   "author": {
     "name": "Dynatrace"
   },
