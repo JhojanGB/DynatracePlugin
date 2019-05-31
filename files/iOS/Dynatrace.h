@@ -1,5 +1,5 @@
 // Dynatrace.h
-// Version: 7.2.4.1229
+// Version: 7.0.6.1013
 //
 // These materials contain confidential information and
 // trade secrets of Dynatrace Corporation. You shall
@@ -30,18 +30,6 @@
 
 /*!
  @brief Defines the possible set of return codes for Dynatrace OneAgent methods
- */
-#ifndef DYNAFRAMEWORK
-#define DYNAFRAMEWORK
-
-typedef NS_ENUM(int, DTX_DataCollectionLevel) {
-    DTX_DataCollectionOff,
-    DTX_DataCollectionPerformance,
-    DTX_DataCollectionUserBehavior
-};
-
-/*!
- @brief Usage of status codes is discouraged, it will be removed in a future release.
  */
 typedef NS_ENUM(int, DTX_StatusCode) {
 
@@ -86,7 +74,7 @@ typedef NS_ENUM(int, DTX_StatusCode) {
 
     //! Returned if the userid exceeds maximum length
     DTX_TruncatedUserId = -11,
-} /*__attribute__((deprecated))*/;
+};
 
 #if __has_feature(nullability)
 #define NULLABLE nullable
@@ -96,49 +84,10 @@ typedef NS_ENUM(int, DTX_StatusCode) {
 #define NONNULL
 #endif
 
-@interface UIControl (DynatraceCustomization)
-
-/*!
- @brief Sets a custom name for the control.
- 
- The custom name is used instead of the captured control title. This can be used to customise control names or hide them for privacy reasons.
- Providing an empty String will use the control type as name (e.g. "Button"). Providing nil will reset to default behaviour.
- */
-
-- (void)dtxCustomControlName:(NULLABLE NSString *)name;
-
-@end
-
-@interface UITableViewCell (DynatraceCustomization)
-
-/*!
- @brief Sets a custom name for the table cell.
- 
- The custom name is used instead of the captured cell title. This can be used to customise cell names or hide them for privacy reasons.
- Providing an empty String will use the cell type as name (e.g. "UITableCell"). Providing nil will reset to default behaviour.
- */
-
-- (void)dtxCustomCellName:(NULLABLE NSString *)name;
-
-@end
-
-@interface UICollectionViewCell (DynatraceCustomization)
-
-/*!
- @brief Sets a custom name for the table cell.
- 
- The custom name is used instead of the captured cell title. This can be used to customise cell names or hide them for privacy reasons.
- Providing an empty String will use the cell type as name (e.g. "CollectionViewCell"). Providing nil will reset to default behaviour.
- */
-
-- (void)dtxCustomCellName:(NULLABLE NSString *)name;
-
-@end
-
 /*!
  @brief Encapsulates a timed mobile action.
 
- It creates or extends a mobile action PurePath in Dynatrace. It provides methods to report values,
+ It creates or extends a mobile action PurePath in Dynatrace.  It provides methods to report values,
  events, and errors against actions.
  */
 @interface DTXAction : NSObject
@@ -147,21 +96,21 @@ typedef NS_ENUM(int, DTX_StatusCode) {
  @brief Starts a top level action.
 
  The top level action results in a new mobile action PurePath in Dynatrace. An action allows you
- to time an interval in your code. Call enterActionWithName: at the point you want to start timing.
+ to time an interval in your code.  Call enterActionWithName: at the point you want to start timing.
  Call the leaveAction instance method on the returned object at the point you want to stop timing.
 
  @param actionName Name of action
 
  @return Returns the new action or nil if an error occurs.
  */
-+ (NULLABLE DTXAction*)enterActionWithName:(NONNULL NSString*)actionName;
++ (NULLABLE DTXAction *)enterActionWithName:(NONNULL NSString *)actionName;
 
 /*!
  @brief Starts a child action.
 
  The action adds a node to an existing mobile action PurePath in Dynatrace. An action allows you
- to time an interval in your code. Call enterActionWithName:parentAction: at the point you want to
- start timing. Call the leaveAction instance method on the returned object at the point you want
+ to time an interval in your code.  Call enterActionWithName:parentAction: at the point you want to
+ start timing.  Call the leaveAction instance method on the returned object at the point you want
  to stop timing.
 
  @param actionName Name of action
@@ -170,7 +119,8 @@ typedef NS_ENUM(int, DTX_StatusCode) {
 
  @return Returns the new action or nil if an error occurs.
  */
-+ (NULLABLE DTXAction*)enterActionWithName:(NONNULL NSString*)actionName parentAction:(NULLABLE DTXAction*)parentAction;
++ (NULLABLE DTXAction *)enterActionWithName:(NONNULL NSString *)actionName
+                               parentAction:(NULLABLE DTXAction *)parentAction;
 
 /*!
  @brief Ends an action and computes its interval.
@@ -195,7 +145,7 @@ typedef NS_ENUM(int, DTX_StatusCode) {
 
  @return Returns a DTX_StatusCode
  */
-- (DTX_StatusCode)reportEventWithName:(NONNULL NSString*)eventName;
+- (DTX_StatusCode)reportEventWithName:(NONNULL NSString *)eventName;
 
 /*!
  @brief Sends a key/value pair to Dynatrace.
@@ -209,7 +159,7 @@ typedef NS_ENUM(int, DTX_StatusCode) {
 
  @return Returns a DTX_StatusCode
  */
-- (DTX_StatusCode)reportValueWithName:(NONNULL NSString*)valueName intValue:(int64_t)intValue;
+- (DTX_StatusCode)reportValueWithName:(NONNULL NSString *)valueName intValue:(int64_t)intValue;
 
 /*!
  @brief Sends a key/value pair to Dynatrace.
@@ -223,7 +173,7 @@ typedef NS_ENUM(int, DTX_StatusCode) {
 
  @return Returns a DTX_StatusCode
  */
-- (DTX_StatusCode)reportValueWithName:(NONNULL NSString*)valueName doubleValue:(double)doubleValue;
+- (DTX_StatusCode)reportValueWithName:(NONNULL NSString *)valueName doubleValue:(double)doubleValue;
 
 /*!
  @brief Sends a key/value pair to Dynatrace.
@@ -236,7 +186,7 @@ typedef NS_ENUM(int, DTX_StatusCode) {
 
  @return Returns a DTX_StatusCode
  */
-- (DTX_StatusCode)reportValueWithName:(NONNULL NSString*)valueName stringValue:(NONNULL NSString*)stringValue;
+- (DTX_StatusCode)reportValueWithName:(NONNULL NSString *)valueName stringValue:(NONNULL NSString *)stringValue;
 
 /*!
  @brief Sends an error value to Dynatrace.
@@ -249,22 +199,22 @@ typedef NS_ENUM(int, DTX_StatusCode) {
 
  @return Returns a DTX_StatusCode
  */
-- (DTX_StatusCode)reportErrorWithName:(NONNULL NSString*)errorName errorValue:(int)errorValue;
+- (DTX_StatusCode)reportErrorWithName:(NONNULL NSString *)errorName errorValue:(int)errorValue;
 
 /*!
  @brief Sends an exception to Dynatrace.
 
- The exception becomes a node of the mobile action PurePath. This can be used to report exceptions
+ The exception becomes a node of the mobile action PurePath.  This can be used to report exceptions
  that are caught and handled.
 
  @param errorName Name of error
 
- @param exception An exception object that has been caught. The description string of this
+ @param exception An exception object that has been caught.  The description string of this
  object is sent to the server along with the call stack if one is present.
 
  @return Returns a DTX_StatusCode
  */
-- (DTX_StatusCode)reportErrorWithName:(NONNULL NSString*)errorName exception:(NONNULL NSException*)exception;
+- (DTX_StatusCode)reportErrorWithName:(NONNULL NSString *)errorName exception:(NONNULL NSException *)exception;
 
 /*!
  @brief Sends an error object to Dynatrace.
@@ -273,17 +223,17 @@ typedef NS_ENUM(int, DTX_StatusCode) {
 
  @param errorName Name of error
 
- @param error An error object that has been caught. The error information for this
+ @param error An error object that has been caught.  The error information for this
  object is sent to the server.
 
  @return Returns a DTX_StatusCode
  */
-- (DTX_StatusCode)reportErrorWithName:(NONNULL NSString*)errorName error:(NONNULL NSError*)error;
+- (DTX_StatusCode)reportErrorWithName:(NONNULL NSString *)errorName error:(NONNULL NSError *)error;
 
 /*!
  @brief Sends an error value to Dynatrace.
 
- Because this is a class method, the error is not associated with an action. It creates
+ Because this is a class method, the error is not associated with an action.  It creates
  its own mobile-only PurePath.
 
  @param errorName Name of error
@@ -292,52 +242,52 @@ typedef NS_ENUM(int, DTX_StatusCode) {
 
  @return Returns a DTX_StatusCode
  */
-+ (DTX_StatusCode)reportErrorWithName:(NONNULL NSString*)errorName errorValue:(int)errorValue;
++ (DTX_StatusCode)reportErrorWithName:(NONNULL NSString *)errorName errorValue:(int)errorValue;
 
 /*!
  @brief Sends an exception to Dynatrace.
 
- Because this is a class method, the exception is not associated with an action. It creates
+ Because this is a class method, the exception is not associated with an action.  It creates
  its own mobile-only PurePath.
 
  @param errorName Name of error
 
- @param exception An exception object that has been caught. The description string of this
+ @param exception An exception object that has been caught.  The description string of this
  object is sent to the server along with the call stack if one is present.
 
  @return Returns a DTX_StatusCode
  */
-+ (DTX_StatusCode)reportErrorWithName:(NONNULL NSString*)errorName exception:(NONNULL NSException*)exception;
++ (DTX_StatusCode)reportErrorWithName:(NONNULL NSString *)errorName exception:(NONNULL NSException *)exception;
 
 /*!
  @brief Sends an error object to Dynatrace.
 
- Because this is a class method, the error is not associated with an action. It creates
+ Because this is a class method, the error is not associated with an action.  It creates
  its own mobile-only PurePath.
 
  @param errorName Name of error
 
- @param error An error object that has been caught. The error information for this
+ @param error An error object that has been caught.  The error information for this
  object is sent to the server.
 
  @return Returns a DTX_StatusCode
  */
-+ (DTX_StatusCode)reportErrorWithName:(NONNULL NSString*)errorName error:(NONNULL NSError*)error;
++ (DTX_StatusCode)reportErrorWithName:(NONNULL NSString *)errorName error:(NONNULL NSError *)error;
 
 /*!
  @brief Ends the visit for Dynatrace.
 
- The endVisit becomes a node of the mobile action PurePath. This is
+ The endVisit becomes a node of the mobile action PurePath.  This is
  used to end a visit within the context of an action.
 
  @return Returns a DTX_StatusCode
  */
-- (DTX_StatusCode)endVisit __attribute__((deprecated("use +[DTXAction endVisit] instead")));
+- (DTX_StatusCode)endVisit;
 
 /*!
  @brief Ends the visit for Dynatrace.
 
- Because this is a class method, the endVisit is not associated with an action. It creates
+ Because this is a class method, the endVisit is not associated with an action.  It creates
  its own mobile-only PurePath.
 
  @return Returns a DTX_StatusCode
@@ -357,6 +307,8 @@ typedef NS_ENUM(int, DTX_StatusCode) {
  */
 @interface DTXWebRequestTiming : NSObject
 
+
+
 /*!
  @brief Creates a DTXWebRequestTiming object.
 
@@ -369,13 +321,14 @@ typedef NS_ENUM(int, DTX_StatusCode) {
 
  @return Returns the DTXWebRequestTiming object.
  */
-+ (NULLABLE DTXWebRequestTiming*)getDTXWebRequestTiming:(NONNULL NSString*)requestTagString requestUrl:(NULLABLE NSURL*)requestUrl;
++ (NULLABLE DTXWebRequestTiming *)getDTXWebRequestTiming:(NONNULL NSString *)requestTagString
+                                              requestUrl:(NULLABLE NSURL *)requestUrl;
 
 /*!
  @brief Manaully start timing a web request.
 
  The Dynatrace OneAgent automatically times web requests made using NSURLRequest, NSURLConnection,
- NSURLProtocol, NSString and UIWebView. If you use an alternate technology to make
+ NSURLProtocol, NSString, UIWebView, and ASIHTTPRequest.  If you use an alternate technology to make
  web requests and want to time them, use the getRequestTagHeader method, adding that information to
  your request, and then this method to start the timing.
 
@@ -383,20 +336,22 @@ typedef NS_ENUM(int, DTX_StatusCode) {
  */
 - (DTX_StatusCode)startWebRequestTiming;
 
+
+
 /*!
  @brief Manually finish timing a web request.
 
- @param statusCode the response status code for a successful web request or the error code or error description
+ @param errorCode the response status code for a successful web request or the error code
  for a failed web request
 
  The Dynatrace OneAgent automatically times web requests made using NSURLRequest, NSURLConnection,
- NSURLProtocol, NSString and UIWebView. If you use an alternate technology to make
+ NSURLProtocol, NSString, UIWebView, and ASIHTTPRequest.  If you use an alternate technology to make
  web requests and want to time them, use the getRequestTagHeader method, adding that information to
  your request, and then this method to stop the timing and send the information to the mobile action PurePath.
 
  @return Returns a DTX_StatusCode
  */
-- (DTX_StatusCode)stopWebRequestTiming:(NULLABLE NSString*)statusCode;
+- (DTX_StatusCode)stopWebRequestTiming:(NULLABLE NSString *)errorCode;
 
 @end
 
@@ -411,30 +366,30 @@ typedef NS_ENUM(int, DTX_StatusCode) {
 @interface Dynatrace : NSObject
 
 /*!
- @brief Initializes the Dynatrace OneAgent. This is deprecated! Please use (DTX_StatusCode)startupWithConfig:(NSDictionary*)config instead.
+ @brief Initializes the Dynatrace OneAgent.
 
  This must be invoked before any Events can be captured. Multiple calls to this method are
  ignored if the OneAgent is not shut down between them.
 
  This method will be called automatically if you specify the value DTXAgentStartupPath in
- your application's Info.plist file. The parameter descriptions below specify the info.plist value
+ your application's Info.plist file.  The parameter descriptions below specify the info.plist value
  to use to specify each parameter value when using auto-start.
 
  @param applicationName A user-defined name for the application. (Info.plist value
  DTXApplicationID)
 
  @param serverURL The URL of the web server with an active Dynatrace UEM agent
- (eg: "http://myhost.mydomain.com:8080/agentLocation/"). The URL scheme dictates whether the OneAgent
+ (eg: "http://myhost.mydomain.com:8080/agentLocation/").  The URL scheme dictates whether the OneAgent
  uses http or https. The URL must contain the agent location specified in the Dynatrace UEM settings
  for this application. (Info.plist value DTXAgentStartupPath)
 
  @param allowAnyCert Allow any certificate for https communication. This is only evaluated if
- the https transport mechanism is specified in the server name. (Info.plist value
+ the https transport mechanism is specified in the server name.  (Info.plist value
  DTXAllowAnyCert)
 
- @param pathToCertificateAsDER Path to a (self-signed) certificate in DER format or nil. Adds a
+ @param pathToCertificateAsDER Path to a (self-signed) certificate in DER format or nil.  Adds a
  certificiate in DER format which is used as an additional anchor to validate https communication.
- This is needed if allowAnyCert is NO and a self-signed certificate is used on the server. You can
+ This is needed if allowAnyCert is NO and a self-signed certificate is used on the server.  You can
  retrieve the path for a file in your application bundle using code like this:
 
  <code>
@@ -446,10 +401,10 @@ typedef NS_ENUM(int, DTX_StatusCode) {
 
  @return Returns a DTX_StatusCode
  */
-+ (DTX_StatusCode)startupWithApplicationName:(NONNULL NSString*)applicationName
-                                   serverURL:(NONNULL NSString*)serverURL
-                                allowAnyCert:(BOOL)allowAnyCert
-                             certificatePath:(NULLABLE NSString*)pathToCertificateAsDER __deprecated_msg("Please use (DTX_StatusCode)startupWithConfig:(NSDictionary*)config instead");
++ (DTX_StatusCode)startupWithApplicationName:(NONNULL NSString *)applicationName
+                                    serverURL:(NONNULL NSString *)serverURL
+                                 allowAnyCert:(BOOL)allowAnyCert
+                              certificatePath:(NULLABLE NSString *)pathToCertificateAsDER;
 
 /*!
  @brief Initializes the Dynatrace OneAgent.
@@ -458,23 +413,48 @@ typedef NS_ENUM(int, DTX_StatusCode) {
  ignored if the OneAgent is not shut down between them.
 
  This method will be called automatically if you specify the value DTXAgentStartupPath in
- your application's info.plist file. This method has no paramaters. It uses the paramaters specified in info.plist.
+ your application's info.plist file.  The parameter descriptions below specify the info.plist value
+ to use to specify each parameter value when using auto-start.
 
+ @param applicationName A user-defined name for the application. (Info.plist value
+ DTXApplicationID)
+
+ @param serverURL The URL of the web server with an active Dynatrace UEM agent
+ (eg: "http://myhost.mydomain.com:8080/agentLocation/").  The URL scheme dictates whether the OneAgent
+ uses http or https. The URL must contain the agent location specified in the Dynatrace UEM settings
+ for this application. (Info.plist value DTXAgentStartupPath)
+
+ @param authenticationClassDelegate The name of the class that implements a class method with the
+ following selector:
+
+<code>
+ +(void)requestAuthenticationChallenge:(NSURLAuthenticationChallenge *)challenge;
+</code>
+
+ Add &lt;DTXAuthenticationClassDelegate&gt; to your class interface.
+
+ (Info.plist value DTXAuthenticationClassDelegate)
 
  @return Returns a DTX_StatusCode
  */
-+ (DTX_StatusCode)startupWithInfoPlistSettings;
++ (DTX_StatusCode)startupWithApplicationName:(NONNULL NSString *)applicationName
+                                    serverURL:(NONNULL NSString *)serverURL
+                  authenticationClassDelegate:(NONNULL Class)authenticationClassDelegate;
+
 
 /*!
  @brief Initializes the Dynatrace OneAgent.
  
- @param config dictionary with pairs similar with the ones from the project plist file.
- A brief list of parameters and value types is present an the end of this file
+ This must be invoked before any Events can be captured. Multiple calls to this method are
+ ignored if the OneAgent is not shut down between them.
+ 
+ This method will be called automatically if you specify the value DTXAgentStartupPath in
+ your application's info.plist file. This method has no paramaters. It uses the paramaters specified in info.plist.
+
  
  @return Returns a DTX_StatusCode
  */
-
-+ (DTX_StatusCode)startupWithConfig:(NONNULL NSDictionary<NSString*,id>*)config;
++ (DTX_StatusCode)startupWithInfoPlistSettings;
 
 /*!
  @brief Stops Dynatrace monitoring.
@@ -490,30 +470,30 @@ typedef NS_ENUM(int, DTX_StatusCode) {
 
   The current session will be tagged with the provided userId. The userId needs to be set again on application restart.
 
-  @param userId to tag the session with. If userId = nil or empty the user tag will be removed from the session.
+  @param userId to tag the session with. If userId  = nil or empty the user tag will be removed from the session.
 
  @return Returns a DTX_StatusCode
  */
-+ (DTX_StatusCode)identifyUser:(NULLABLE NSString*)userId;
++(DTX_StatusCode) identifyUser:(NULLABLE NSString *) userId;
 
 /*!
  @brief Identify a user.
 
  The current session will be tagged with the provided userId. The userId needs to be set again on application restart.
-
- @param userId to tag the session with. If userId = nil or empty the user tag will be removed from the session.
-
+ 
+ @param userId to tag the session with. If userId  = nil or empty the user tag will be removed from the session.
+ 
   @param parentAction The parent action for the user identify.
 
 
  @return Returns a DTX_StatusCode
  */
 
-+ (DTX_StatusCode)identifyUser:(NULLABLE NSString*)userId parentAction:(NULLABLE DTXAction*)parentAction;
++(DTX_StatusCode) identifyUser:(NULLABLE NSString *) userId parentAction:(NULLABLE DTXAction *)parentAction;
 /*!
  @brief Set the current GPS location of the user.
 
- The Dynatrace library does not automatically collect location information. If the
+ The Dynatrace library does not automatically collect location information.  If the
  developer wants location information to be transmitted to Dynatrace, then this function should
  be used to provide it.
 
@@ -522,7 +502,7 @@ typedef NS_ENUM(int, DTX_StatusCode) {
  @return Returns a DTX_StatusCode indicating current uem capture status (if the OneAgent is not
  capturing no GPS location is set)
  */
-+ (DTX_StatusCode)setGpsLocation:(NONNULL CLLocation*)gpsLocation;
++ (DTX_StatusCode)setGpsLocation:(NONNULL CLLocation *)gpsLocation;
 
 /*!
  @brief Provides information regarding internal errors.
@@ -541,7 +521,7 @@ typedef NS_ENUM(int, DTX_StatusCode) {
 
  @return Returns the error message or nil if there is no error.
  */
-+ (NULLABLE NSString*)lastErrorMsg;
++ (NULLABLE NSString *)lastErrorMsg;
 
 /*!
  @brief Send all collected events immediately.
@@ -557,14 +537,15 @@ typedef NS_ENUM(int, DTX_StatusCode) {
 /*!
  @brief Enable Dynatrace crash reporting.
 
- The Dynatrace OneAgent can report on application crashes using the KSCrash framwork. Call this
- method after startup to enable crash reporting to the Dynatrace server.
+ The Dynatrace OneAgent can report on application crashes using the KSCrash framwork.  Call this
+ method after startupWithApplicationName:serverURL:allowAnyCert:certificatePath: to enable
+ crash reporting to the Dynatrace server.
 
- When using auto-start use the Info.plist value DTXCrashReportingEnabled to control whether this
- method is invoked automatically. You must disable the automatic invocation of this method if
+ When using auto-start use the info.plist value DTXCrashReportingEnabled to control whether this
+ method is invoked automatically.  You must disable the automatic invocation of this method if
  you wish to use one of the following methods to enable third party crash reporting.
 
- @param sendCrashReport YES to send complete crash report to Dynatrace server. NO to
+ @param sendCrashReport YES to send complete crash report to Dynatrace server.  NO to
  send only minimal information.
 
  @return Returns a DTX_StatusCode
@@ -574,56 +555,123 @@ typedef NS_ENUM(int, DTX_StatusCode) {
 /*!
  @brief Enable Dynatrace and HockeyApp crash reporting.
 
- The Dynatrace OneAgent can report on application crashes using the KSCrash framwork. Call this
- method after startup to enable crash reporting to the Dynatrace server as well as HockeyApp.
- Crash information will be sent to both systems.
+ The Dynatrace OneAgent can report on application crashes using the KSCrash framwork.  Call this
+ method after startupWithApplicationName:serverURL:allowAnyCert:certificatePath: to enable
+ crash reporting to the Dynatrace server as well as HockeyApp.  Crash information
+ will be sent to both systems.
 
  When using auto-start you must set the DTXCrashReportingEnabled info.plist value to NO when using
  this method to initiate crash reporting.
 
- @param sendCrashReport YES to send complete crash report to Dynatrace server. NO to
+ @param sendCrashReport YES to send complete crash report to Dynatrace server.  NO to
  send only minimal information.
 
  @param appIdentifier The application identifier assigned by HockeyApp to your application.
 
- @param waitUntilReachable YES to wait until HockeyApp is reachable before sending. NO to attempt
+ @param waitUntilReachable YES to wait until HockeyApp is reachable before sending.  NO to attempt
  sending whether available or not and simply fails if not available.
 
- @param userId Optional HockeyApp user ID. Set to nil if not needed.
+ @param userId Optional HockeyApp user ID.  Set to nil if not needed.
 
- @param userName Optional HockeyApp user name. Set to nil if not needed.
+ @param userName Optional HockeyApp user name.  Set to nil if not needed.
 
- @param contactEmail Optional HockeyApp user contact email address. Set to nil if not needed.
+ @param contactEmail Optional HockeyApp user contact email address.  Set to nil if not needed.
 
  @param description Optional description to include with the crash report for HockeyApp.
 
  @return Returns a DTX_StatusCode
  */
 + (DTX_StatusCode)enableCrashReportingWithReport:(BOOL)sendCrashReport
-                             hockeyAppIdentifier:(NONNULL NSString*)appIdentifier
-                        hockeyWaitUntilReachable:(BOOL)waitUntilReachable
-                                    hockeyUserId:(NULLABLE NSString*)userId
-                                  hockeyUserName:(NULLABLE NSString*)userName
-                              hockeyContactEmail:(NULLABLE NSString*)contactEmail
-                          hockeyCrashDescription:(NULLABLE NSString*)description;
+                              hockeyAppIdentifier:(NONNULL NSString *)appIdentifier
+                         hockeyWaitUntilReachable:(BOOL)waitUntilReachable
+                                     hockeyUserId:(NULLABLE NSString *)userId
+                                   hockeyUserName:(NULLABLE NSString *)userName
+                               hockeyContactEmail:(NULLABLE NSString *)contactEmail
+                           hockeyCrashDescription:(NULLABLE NSString *)description;
 
 /*!
- @brief Enable Dynatrace and email crash reporting.
+ @brief Enable Dynatrace and Quincy crash reporting.
 
- The Dynatrace OneAgent can report on application crashes using the KSCrash framwork. Call this
- method after startup to enable crash reporting to the Dynatrace server as well as by email.
- Crash reports will be sent to the Dynatrace server, and the device user will have the opportunity
- to send the report by email to the address(es) of your choice.
-
- The device user will first see an alert on their screen. You control the title, text, and button
- labels on the alert. If the user taps the yes button, then the email UI will popup on the
- screen. It will be preloaded with a message containing the recipients, subject, message, and the
- crash report as an attachment. The can modify the message before sending it.
+ The Dynatrace OneAgent can report on application crashes using the KSCrash framwork.  Call this
+ method after startupWithApplicationName:serverURL:allowAnyCert:certificatePath: to enable
+ crash reporting to the Dynatrace server as well as a Quincy server.  Crash
+ information will be sent to both systems.
 
  When using auto-start you must set the DTXCrashReportingEnabled info.plist value to NO when using
  this method to initiate crash reporting.
 
- @param sendCrashReport YES to send complete crash report to Dynatrace server. NO to
+ @param sendCrashReport YES to send complete crash report to Dynatrace server.  NO to
+ send only minimal information.
+
+ @param serverURL The URL of your Quincy server.
+
+ @param waitUntilReachable YES to wait until Quincy server is reachable before sending.  NO to
+ attempt sending whether available or not and simply fails if not available.
+
+ @param userId Optional Quincy user ID.  Set to nil if not needed.
+
+ @param userName Optional Quincy user name.  Set to nil if not needed.
+
+ @param contactEmail Optional Quincy user contact email address.  Set to nil if not needed.
+
+ @param description Optional description to include with the crash report for Quincy.
+
+ @return Returns a DTX_StatusCode
+ */
++ (DTX_StatusCode)enableCrashReportingWithReport:(BOOL)sendCrashReport
+                                        quincyURL:(NONNULL NSString *)serverURL
+                         quincyWaitUntilReachable:(BOOL)waitUntilReachable
+                                     quincyUserId:(NULLABLE NSString *)userId
+                                   quincyUserName:(NULLABLE NSString *)userName
+                               quincyContactEmail:(NULLABLE NSString *)contactEmail
+                           quincyCrashDescription:(NULLABLE NSString *)description;
+
+/*!
+ @brief Enable Dynatrace and Victory crash reporting.
+
+ The Dynatrace OneAgent can report on application crashes using the KSCrash framwork.  Call this
+ method after startupWithApplicationName:serverURL:allowAnyCert:certificatePath: to enable
+ crash reporting to the Dynatrace server as well as a Victory server.  Crash
+ information will be sent to both systems.
+
+ When using auto-start you must set the DTXCrashReportingEnabled info.plist value to NO when using
+ this method to initiate crash reporting.
+
+ @param sendCrashReport YES to send complete crash report to Dynatrace server.  NO to
+ send only minimal information.
+
+ @param serverURL The URL of your Victory server.
+
+ @param userName Optional Victory user name.  Set to nil and the KSCrash framework will use
+ UIDevice.currentDevice.name.
+
+ @param userEmail Optional Victory user contact email address.  Set to nil if not needed.
+
+ @return Returns a DTX_StatusCode
+ */
++ (DTX_StatusCode)enableCrashReportingWithReport:(BOOL)sendCrashReport
+                                       victoryURL:(NONNULL NSString *)serverURL
+                                  victoryUserName:(NULLABLE NSString *)userName
+                                 victoryUserEmail:(NULLABLE NSString *)userEmail;
+
+/*!
+ @brief Enable Dynatrace and email crash reporting.
+
+ The Dynatrace OneAgent can report on application crashes using the KSCrash framwork.  Call this
+ method after startupWithApplicationName:serverURL:allowAnyCert:certificatePath: to enable
+ crash reporting to the Dynatrace server as well as by email.  Crash reports will
+ be sent to the Dynatrace server, and the device user will have the opportunity to send the
+ report by email to the address(es) of your choice.
+
+ The device user will first see an alert on their screen.  You control the title, text, and button
+ labels on the alert.  If the user taps the yes button, then the email UI will popup on the
+ screen.  It will be preloaded with a message containing the recipients, subject, message, and the
+ crash report as an attachment.  The can modify the message before sending it.
+
+ When using auto-start you must set the DTXCrashReportingEnabled info.plist value to NO when using
+ this method to initiate crash reporting.
+
+ @param sendCrashReport YES to send complete crash report to Dynatrace server.  NO to
  send only minimal information.
 
  @param recipients An array of NSString's each containing one email address.
@@ -632,298 +680,87 @@ typedef NS_ENUM(int, DTX_StatusCode) {
 
  @param message The email body text.
 
- @param filename The name to use for the file attachment containing the crash report. Set to
+ @param filename The name to use for the file attachment containing the crash report.  Set to
  nil to use the default name.
 
- @param sendAppleStyleReport YES to send an Apple style crash report. NO to send a JSON style
+ @param sendAppleStyleReport YES to send an Apple style crash report.  NO to send a JSON style
  crash report.
 
  @param alertTitle Title for the alert.
 
  @param alertMessage Message for the alert.
 
- @param yesButtonText Label for the yes button in the alert. If the user taps this button, then
+ @param yesButtonText Label for the yes button in the alert.  If the user taps this button, then
  the email UI appears.
 
- @param noButtonText Label for the no button in the alert. If the user taps this button, then
- the crash report is not emailed. It is still sent to Dynatrace.
+ @param noButtonText Label for the no button in the alert.  If the user taps this button, then
+ the crash report is not emailed.  It is still sent to Dynatrace.
 
  @return Returns a DTX_StatusCode
  */
 
 + (DTX_StatusCode)enableCrashReportingWithReport:(BOOL)sendCrashReport
-                                 emailRecipients:(NULLABLE NSArray*)recipients
-                                    emailSubject:(NULLABLE NSString*)subject
-                                    emailMessage:(NULLABLE NSString*)message
-                                   emailFilename:(NULLABLE NSString*)filename
-                            sendAppleStyleReport:(BOOL)sendAppleStyleReport
-                                      alertTitle:(NULLABLE NSString*)alertTitle
-                                    alertMessage:(NULLABLE NSString*)alertMessage
-                                   yesButtonText:(NULLABLE NSString*)yesButtonText
-                                    noButtonText:(NULLABLE NSString*)noButtonText;
+                                  emailRecipients:(NULLABLE NSArray *)recipients
+                                     emailSubject:(NULLABLE NSString *)subject
+                                     emailMessage:(NULLABLE NSString *)message
+                                    emailFilename:(NULLABLE NSString *)filename
+                             sendAppleStyleReport:(BOOL)sendAppleStyleReport
+                                       alertTitle:(NULLABLE NSString *)alertTitle
+                                     alertMessage:(NULLABLE NSString *)alertMessage
+                                    yesButtonText:(NULLABLE NSString *)yesButtonText
+                                     noButtonText:(NULLABLE NSString *)noButtonText;
 
 /*!
- @brief Sets a dictionary of custom headers to be included in all OneAgent data transmissions.
- 
- The Dynatrace OneAgent sends data to the server via HTTP or HTTPS. If your infrastructure requires
- custom headers to be added to HTTP requests in order for them to pass you can use this method to provide
- them. This method needs to be called as early as possible to ensure that the headers are available for the first communication with the server.
- It can be called again later to change or to remove the headers.
+ @brief Set a cookie to be included in all OneAgent data transmissions.
 
- @param beaconHeaders The headers dictionary. Pass nil to remove all headers from future requests.
- The headers will be inspected for invalid or not allowed values.
-     Limitations:
-     - max number of headers: 10
-     - max header len: 4096 bytes
-     - max total size: 8192 bytes
- 
- @return YES if the headers where successfully set, NO otherwise.
- */
-+ (BOOL)setBeaconHeaders:(NULLABLE NSDictionary<NSString*,NSString*>*)beaconHeaders;
+ The Dynatrace OneAgent sends data to the server via HTTP or HTTPS.  If your infrastructure requires
+ a cookie to be added to HTTP requests in order for them to pass you can use this method to set
+ the value of the Cookie header.  This method must be called before the OneAgent is initialized using
+ startupWithApplicationName:serverURL:allowAnyCert:certificatePath: so that the cookie is
+ available for the first communication with the server.  It can be called again later to change
+ the cookie value or to disable the Cookie header.
 
-/**
- @return the dictionary of custom headers that was set with setBeaconHeaders: method
+ @param cookieString The value for the HTTP Cookie header.  You can set multiple values by
+ separating them with a semicolon and space as specified in the Cookie standard.  For instance
+ "x=123; y=Open.gif".  Pass nil to remove the HTTP Cookie header from requests.
  */
-+ (NULLABLE NSDictionary<NSString*,NSString*>*)beaconHeaders;
-
-/**
- In order to receive notifications about the network errors occurred in the agent
- subscribe to the notification center using this as name.
- 
- e.g.: [[NSNotificationCenter defaultCenter] addObserverForName:[Dynatrace getCommunicationProblemNotificationName] ... ];
- */
-+ (NONNULL NSString *)getCommunicationProblemNotificationName;
++ (void)setMonitorCookie:(NONNULL NSString *)cookieString;
 
 /*!
  @brief Returns the HTTP header to use for manual web request tagging.
 
  The Dynatrace OneAgent automatically tags web requests made using NSURLRequest, NSURLConnection,
- NSURLProtocol, NSString and UIWebView. If you use an alternate technology to make
+ NSURLProtocol, NSString, UIWebView, and ASIHTTPRequest.  If you use an alternate technology to make
  web requests and want them to appear nested in a mobile action PurePath use this method and the
- getRequestTagValue method to retrieve the HTTP header and its value. Adding that information to
+ getRequestTagValue method to retrieve the HTTP header and its value.  Adding that information to
  your request will include it in the PurePath.
 
  @return Returns the name of the HTTP header that you must add to your web request.
  */
-+ (NONNULL NSString*)getRequestTagHeader;
++ (NONNULL NSString *)getRequestTagHeader;
 
 /*!
  @brief Returns the HTTP header value to use for manual web request tagging.
 
  The Dynatrace OneAgent automatically tags web requests made using NSURLRequest, NSURLConnection,
- NSURLProtocol, NSString and UIWebView. If you use an alternate technology to make
+ NSURLProtocol, NSString, UIWebView, and ASIHTTPRequest.  If you use an alternate technology to make
  web requests and want them to appear nested in a mobile action PurePath use this method and the
- getRequestTagHeader method to retrieve the HTTP header and its value. Adding that information to
+ getRequestTagHeader method to retrieve the HTTP header and its value.  Adding that information to
  your request will include it in the PurePath.
 
  @param url The NSURL for the web request.
 
  @return Returns the value of the HTTP header that you must add to your web request.
  */
-+ (NULLABLE NSString*)getRequestTagValueForURL:(NULLABLE NSURL*)url;
-
-/*!
- @brief Returns the current data collection level. This method will always return DTX_DataCollectionUserBehavior when the user optin feature is not used.
- 
- @return current data collection level
- */
-+ (DTX_DataCollectionLevel)dataCollectionLevel;
-
-/*!
- @brief Allows the user to set the data collection level and stores the users decisions for future sessions.
- 
- This method does not store the settings when the user optin feature is not used.
- When the user changes the data collection level a new session will be started.
-
- @param dataCollectionLevel new data collection level
- 
- @param completion callback that is executed when switching to the new data collection level is finished
- */
-+ (void)setDataCollectionLevel:(DTX_DataCollectionLevel)dataCollectionLevel completion:(void(^ _Nullable)(BOOL successful))completion;
-
-/*!
- @brief Returns the current privacy setting for crash reporting. This method will always return YES, when the user optin feature is not used.
- 
- @return current privacy setting for crash reporting
- */
-+ (BOOL)crashReportingOptedIn;
-
-/*!
- @brief Allows the user to activate/deactivate crash reporting and stores the users decisions for future sessions.
- 
- This method does not store the settings when the user optin feature is not used.
- @param optedIn YES, if crash reporting is confirmed by the user
- */
-+ (void)setCrashReportingOptedIn:(BOOL)optedIn;
++ (NULLABLE NSString *)getRequestTagValueForURL:(NULLABLE NSURL *)url;
 
 @end
 
-#endif
-
 /*
- DTXLogLevel (string)
- If this key is present with a valid value (ALL, FINEST, FINER, FINE, CONFIG, INFO, WARNING, SEVERE, OFF)
- OneAgent logging will be automatically enabled with this value. If a key isn't present or doesn't have a valid value,
- logging will default to INFO.
+ @brief Protocol definition for authentication class delegate
  */
-extern NSString *_Nonnull const kDTXLogLevel;
+@protocol DTXAuthenticationClassDelegate <NSObject>
 
-/*
- DTXApplicationID(string)
- This key’s value is used by Dynatrace to identify your mobile app. Auto-instrumentation issues an error if the key isn't present.
- */
-extern NSString *_Nonnull const kDTXApplicationID;
++ (void)requestAuthenticationChallenge:(NONNULL NSURLAuthenticationChallenge *)challenge;
 
-/*
- DTXAgentCertificatePath(string)
- This key defines the path to a (self-signed) certificate in DERformat, which is used as an additional anchor
- to validate HTTPS communication. This key is needed if DTXAllowAnyCert is false and a self-signed certificate
- is used on the server. The default value is null.
- */
-extern NSString *_Nonnull const kDTXAgentCertificatePath;
-
-/*
- DTXInstrumentWebViewTiming(Boolean)
- Detects and times web requests that originate from web views in your app. Set the value to false to disable
- automatic detection and timing of web view web requests. The default value is true.
- */
-extern NSString *_Nonnull const kDTXInstrumentWebViewTiming;
-
-/*
- DTXExcludedControls(array)
- Defines an array of items where each item contains a type of view or control to exclude from automatic creation
- of user actions. Each item in the array is a case-insensitive string. Possible values are Button, DatePicker, Slider, Stepper,
- Switch, RefreshControl, ToolBar, SegmentedControl, TableView, TabBar, AlertView, AlertAction, PageView, NavigationController,
- CollectionView, Gesture, and ActionSheet.
- */
-extern NSString *_Nonnull const kDTXExcludedControls;
-
-/*
- DTXExcludedControlClasses(array)
- An array of items where each item contains the name of a UI control (sub-)class to exclude from automatic instrumentation.
- Each item in the array is a case-sensitive string that must exactly match the name of the class to be excluded.
- */
-extern NSString *_Nonnull const kDTXExcludedControlClasses;
-
-/*
- DTXExcludedLifecycleClasses(array)
- An array of items where each item contains the name of a class to exclude from automatic lifecycle instrumentation.
- Each item in the array is a case-sensitive string that must exactly match the name of the class to be excluded.
- */
-extern NSString *_Nonnull const kDTXExcludedLifecycleClasses;
-
-/*
- DTXCrashReportingEnabled(Boolean)
- Set the value to false if you want to disable crash reporting. The default value is true.
- */
-extern NSString *_Nonnull const kDTXCrashReportingEnabled;
-
-/*
- DTXSendCrashReports(Boolean)
- Corresponds to the sendCrashReport parameter for enableCrashReportingwithReport to send crash reports to the AppMon Server.
- Set the key to false if you do not want to send crash reports. The default value is true.
- */
-extern NSString *_Nonnull const kDTXSendCrashReports;
-
-/*
- DTXInstrumentLifecycleMonitoring(Boolean)
- Automatic lifecycle detection is enabled without the need to override your view controller classes with the OneAgent
- for iOS lifecycle classes. Set the value to false to disable automatic lifecycle monitoring. The default value is true.
- */
-extern NSString *_Nonnull const kDTXInstrumentLifecycleMonitoring;
-
-/*
- DTXInstrumentWebRequestTiming(Boolean)
- The default value is true, which turns on automatic web request timing. Set the value to false to disable automatic
- web request timing. Note that webRequestTagging is enabled if webRequestTiming is enabled, because it's a dependency.
- */
-extern NSString *_Nonnull const kDTXInstrumentWebRequestTiming;
-
-/*
- DTXInstrumentAutoUserAction(Boolean)
- The default value is true. Turns on the ability to automatically create user actions for user interactions with the app,
- such as button clicks. Set the value to false to disable automatic creation of user actions.
- */
-extern NSString *_Nonnull const kDTXInstrumentAutoUserAction;
-
-/*
- DTXAutoActionTimeoutMilliseconds(number)
- The default value is 500 ms. Sets the value for how long a particular automatic user action is active.
- The purpose is to catch all web requests that happen when an automatic user action is active.
- If the automatic user action has completed web requests, OneAgent leaves the action at the end of this time.
- The minimum allowed value is 100 ms, the maximum allowed value is 5000 ms (five seconds).
- */
-extern NSString *_Nonnull const kDTXAutoActionTimeoutMilliseconds;
-
-/*
- DTXAutoActionMaxDurationMilliseconds(number)
- The default value is 60000 ms (60 seconds). Sets the amount of time to retain an automatic user action before deletion.
- The purpose is to catch all web requests that occur when an automatic user action is active.
- If an automatic user action has pending web requests that are taking a long time to complete,
- OneAgent waits for this amount of time for the web requests to complete before leaving the user action.
- The minimum allowed value is 100 ms, the maximum allowed value is 540000 ms (nine minutes).
- */
-extern NSString *_Nonnull const kDTXAutoActionMaxDurationMilliseconds;
-
-/*
- DTXSendEmptyAutoAction(Boolean)
- Determines whether to send automatic user actions that don't contain any web requests or lifecycle actions.
- The default value is true.
- */
-extern NSString *_Nonnull const kDTXSendEmptyAutoAction;
-
-/*
- DTXInstrumentGPSLocation(Boolean)
- The location is captured only if the app uses CLLocationManager and sends the captured location as a metric to the server.
- OneAgent for iOS doesn't perform GPS location capturing on its own. Set the value to false to disable OneAgent
- for iOS location capturing. The default value is true.
- */
-extern NSString *_Nonnull const kDTXInstrumentGPSLocation;
-
-/*
- DTXAllowAnyCert(Boolean)
- If set to true, self signed certificates are accepted.
- If set to false, valid certificates from known certificate authorities are accepted. The default value is false.
- */
-extern NSString *_Nonnull const kDTXAllowAnyCert;
-
-/*
- DTXHybridApplication(Boolean)
- The default value is false. Set the value to true if you have a Hybrid application.
- This is necessary to share the same visit for user actions created by the JavaScript agent.
- */
-extern NSString *_Nonnull const kDTXHybridApplication;
-
-/*
- DTXUserOptIn(Boolean)
- If set to true, privacy mode is activated and user consent needs to be queried and set.
- The privacy settings for data collection and crash reporting can be changed via the OneAgent SDK for Mobile like described in Data privacy.
- The default value is false.
- https://www.dynatrace.com/support/help/user-experience/mobile-apps/how-do-i-enrich-mobile-user-experience-data-via-the-oneagent-sdk-for-mobile/#anchor_privacy
- */
-extern NSString *_Nonnull const kDTXUserOptIn;
-
-/*
- DTXAgentStartupPath(String) - AppMon
- If this key is present with a valid value, the Mobile Agent starts automatically and using this value as the serverUrl name.
- It ignores any manual startup calls in your app. serverUrl must start with the transport mechanism to use (http:// or https://). 
- */
-extern NSString *_Nonnull const kDTXAgentStartupPath;
-
-/*
- DTXClusterURL(String) - Dynatrace
- The address to your Dynatrace cluster. This value needs to begin with the transport mechanism to be used (http:// or https://).
- */
-extern NSString *_Nonnull const kDTXClusterURL;
-
-/*
- DTXAgentEnvironment(string) - Dynatrace
- This key’s value is used to identify Dynatrace environment. Auto-instrumentation issues an error if this key isn't present.
- */
-extern NSString *_Nonnull const kDTXAgentEnvironment;
-
-/*
- DTXManagedCluster(Boolean) - Dynatrace
- Has to be enabled for Dynatrace Managed only.
- */
-extern NSString *_Nonnull const kDTXManagedCluster;
+@end

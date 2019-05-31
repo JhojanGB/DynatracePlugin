@@ -2,41 +2,44 @@
 
 APK_FILE=
 APK_INSTR_PROP_FILE=
-# Absolute path to the installation (location of this script)
-INSTALL_FOLDER="$(cd "$(dirname "$0")" && pwd -P)"
-TOOLS=${INSTALL_FOLDER}/tools
-# Optionally user can define JVM options such as -Xmx
-JAVA_OPTIONS=-Xmx1024m
-# Dependency libraries
-export CLASSPATH="${INSTALL_FOLDER}/libs/*" 
 
-#-----------------------------------------------------------------------------------------
-# Error Messages
 function showUsage()
 {
 	echo "Usage: $0 apk=apk-file prop=instr-property-file"
+}
+
+function javaNotFound() {
+    echo "Unable to find java in ${JAVA_HOME}\bin."
+    echo "Please set the JAVA_HOME variable in your environment to match the location of your Java Development Kit (JDK) installation."
+}
+
+function jdkNotFound() {
+    echo "A Java Runtime Environment (JRE) was detected in ${JAVA_HOME}. Java Development Kit (JDK) version 1.8 is required."
+    echo "Please set the JAVA_HOME variable in your environment to match the location of your JDK installation."
+}
+
+function jdkWrongVersion() {
+    echo "An unsupported version of the Java Development Kit (JDK) was detected in ${JAVA_HOME}. Java Development Kit (JDK) version 1.8 is required."
+    echo "Please set the JAVA_HOME variable in your environment to match the location of your JDK installation."
 }
 
 function apkFileInvalid() {
     echo "There was a problem verifying the integrity of your APK file."
 }
 
-#-----------------------------------------------------------------------------------------
-# Depending on the OS the TOOLS_OS is set to point to the required tools
 function setPaths()
 {
 	if [ `uname` == "Darwin" ]; then
-		TOOLS_OS=${TOOLS}/MacOS
+		export JAVA_HOME=`/usr/libexec/java_home`
+		TOOLS_HOME=${INSTALL_FOLDER}/tools/MacOS
 		APK_NAME_NO_EXT=`basename -s'.apk' "$APK_FILE"`
 	else
-		TOOLS_OS=${TOOLS}/linux
-		export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${TOOLS}/linux
+		TOOLS_HOME=${INSTALL_FOLDER}/tools/linux
+		export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${INSTALL_FOLDER}/tools/linux
 		APK_NAME_NO_EXT=`basename "$APK_FILE" .apk`
 	fi
 }
 
-#-----------------------------------------------------------------------------------------
-# Parsing the arguments
 while [ "$1" != "" ]; do
     PARAM=`echo "$1" | awk -F= '{print $1}'`
     VALUE=`echo "$1" | awk -F= '{print $2}' | sed -e 's/^"//'  -e 's/"$//'`
@@ -74,24 +77,30 @@ if [ "${APK_INSTR_PROP_FILE}" == "" ]; then
 fi
 
 #-----------------------------------------------------------------------------------------
-# set the paths to OS depending tools and ensure execution permissions
+# set the paths for JAVA_HOME and the SDK tools depending on if we are Mac or Linux
+
+INSTALL_FOLDER="$(cd "$(dirname "$0")" && pwd -P)"
 setPaths
-chmod +x "${TOOLS_OS}"/*
 
 #-----------------------------------------------------------------------------------------
-# Make sure that a proper Java installation is set in the JAVA_HOME variable.
-# If not, try to find one
-export JAVA_HOME
-# source find java feature
-source "${TOOLS}/findjava.sh"
-if [ "$?" != "0" ] ; then
-	exit 1
+# User may need to define JAVA_HOME environment variable
+
+if [ ! -e "${JAVA_HOME}/bin/java" ]; then
+    javaNotFound
+    exit 1
 fi
-# if no java is found it stops here
 
+if [ ! -e "${JAVA_HOME}/bin/jar" ]; then
+    jdkNotFound
+    exit 1
+fi
 
-#-----------------------------------------------------------------------------------------
-# Check if APK is well formed
+jver=$("${JAVA_HOME}/bin/java" -version 2>&1 | sed 's/.*version ".*\.\(.*\)\..*"/\1/; 1q')
+if [ "${jver}" -lt 8 ]; then
+    jdkWrongVersion
+    exit 1
+fi
+
 "${JAVA_HOME}/bin/jar" -tf "${APK_FILE}" > /dev/null
 
 if [ "$?" != "0" ] ; then
@@ -99,10 +108,64 @@ if [ "$?" != "0" ] ; then
 	exit 1
 fi
 
+#-----------------------------------------------------------------------------------------
+# Optionally user can define JVM options such as -Xmx
+
+JAVA_OPTIONS=-Xmx1024m
+
+#-----------------------------------------------------------------------------------------
+# Define the runtime environment based on our installation - keying off the path of this script
+
+LIB_FOLDER="${INSTALL_FOLDER}/libs"
+ASMDEX_LIB=${LIB_FOLDER}/asmdex.jar
+DDX_LIB=${LIB_FOLDER}/ddx1.26.jar
+APKTOOL_LIB=${LIB_FOLDER}/apktool.jar
+DEX_LIB=${LIB_FOLDER}/dx.jar
+ADK_LIB="${LIB_FOLDER}/Dynatrace.jar"
+ADK_CB_LIB=${LIB_FOLDER}/Callbacks.jar
+ADK_JSI_LIB=${LIB_FOLDER}/com.dynatrace.android.ext.jsi.jar
+JACK_LIB=${LIB_FOLDER}/jack.jar
+JILL_LIB=${LIB_FOLDER}/jill.jar
+OKHTTP_LIB=${LIB_FOLDER}/com.dynatrace.android.okhttp.jar
+
+if [ ! -f "$ADK_LIB" ]; then
+	echo Agent library jar file not found.
+	exit 1
+fi
+
+# -----------------------------------------------------------------------------------------
+# Remove old framework dir for apktool
+# -----------------------------------------------------------------------------------------
+"${JAVA_HOME}/bin/java" ${JAVA_OPTIONS} -jar "${APKTOOL_LIB}" empty-framework-dir &> /dev/null
+
+# This variable points to a COMMA delimited list of libraries the instrumented code will need at runtime.
+# These libraries are converted to Dex files and then merged into a given classes.dex/APK
+
+DEPENDENT_LIBS=${ADK_CB_LIB},${ADK_LIB},${ADK_JSI_LIB},${OKHTTP_LIB}
+
+# Ensure Android SDK (aapt/zipalign/etc.) are on our path
+
+PATH=${TOOLS_HOME}:${PATH}
+export PATH
+
+# Auto Instrumentation (dexify and merge) sub-processes need this environment variable to point to apktool.jar and dx.jar
+
+TOOL_PATHS=${APKTOOL_LIB}:${DEX_LIB}
+export TOOL_PATHS
+
+# Auto Instrumentation dependent libs/paths
+
+RUNTIME_LIBS=${LIB_FOLDER}/Common.jar:${LIB_FOLDER}/CommonJava.jar:${LIB_FOLDER}/APKit.jar
+CLASSPATH=${JACK_LIB}:${JILL_LIB}:${ASMDEX_LIB}:${DDX_LIB}:${DEX_LIB}:${RUNTIME_LIBS}
+
+# Ensure execution permissions
+
+chmod +x "${TOOLS_HOME}"/*
 
 #-----------------------------------------------------------------------------------------
 # Instrument the given APK
-"${JAVA_HOME}/bin/java" ${JAVA_OPTIONS} -cp "${CLASSPATH}" com.dynatrace.android.instrumentation.AdkInstrumentor "${APK_FILE}" -prop "${APK_INSTR_PROP_FILE}" -wdir "${INSTALL_FOLDER}"
+
+"${JAVA_HOME}/bin/java" ${JAVA_OPTIONS} -cp "${CLASSPATH}" com.dynatrace.android.instrumentation.AdkInstrumentor "${APK_FILE}" -dep "${DEPENDENT_LIBS}" -prop "${APK_INSTR_PROP_FILE}"
 
 if [ "${?}" != "0" ]; then
 	echo Instrumentation failed
@@ -129,9 +192,10 @@ else
 fi
 
 #-----------------------------------------------------------------------------------------
+
 # Zipalign the signed APK
 
-"${TOOLS_OS}/zipalign" -p -f 4 "${INSTRUMENTED_APK}" "${ZIPALIGNED_APK}"
+zipalign -f 4 "${INSTRUMENTED_APK}" "${ZIPALIGNED_APK}"
 
 if [ -f "${ZIPALIGNED_APK}" ]; then
 	echo Zipaligning completed - Instrumented and zipaligned APK: ${ZIPALIGNED_APK}
@@ -145,7 +209,7 @@ fi
 
 echo Signing non-release APK ...
 
-"${JAVA_HOME}/bin/java" -jar "${TOOLS}/apksigner.jar" sign --ks "${TOOLS}/debug.keystore" --ks-pass pass:android --out "${FINAL_APK}" "${ZIPALIGNED_APK}"
+"${JAVA_HOME}/bin/java" -jar "${LIB_FOLDER}/apksigner.jar" sign --ks "${LIB_FOLDER}/debug.keystore" --ks-pass pass:android --out "${FINAL_APK}" "${ZIPALIGNED_APK}" 
 
 #-----------------------------------------------------------------------------------------
 

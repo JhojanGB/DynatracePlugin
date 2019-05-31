@@ -2,12 +2,12 @@ var exec = require('cordova/exec');
 var emptyFunction = function(){};
 
 module.exports = {
-
-	endVisit: function (success, error){
+	
+	getCaptureStatus: function(success, error){
 		success = success || emptyFunction;
         error = error || emptyFunction;
 		
-		exec(success, error, "DynatraceCordovaPlugin", "endVisit", []);
+		exec(success, error, "DynatraceCordovaPlugin", "getCaptureStatus", []);
 	}
 	
 }

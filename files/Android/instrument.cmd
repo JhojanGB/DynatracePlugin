@@ -2,27 +2,10 @@
 
 setlocal
 
-:: -----------------------------------------------------------------------------------------
-:: Define the runtime environment variables
-:: -----------------------------------------------------------------------------------------
-
-set "APK_FILE=null"
-set "APK_INSTR_PROP_FILE=null"
-:: Location of this instrumtation script
-set "INSTALL_FOLDER=%~dp0"
-:: Remove tailing \ if any
-IF %INSTALL_FOLDER:~-1%==\ SET INSTALL_FOLDER=%INSTALL_FOLDER:~0,-1%
-set "TOOLS=%INSTALL_FOLDER%\tools"
-set "WIN_TOOLS=%TOOLS%\win"
-set "LIB_FOLDER=%INSTALL_FOLDER%\libs"
-set "CLASSPATH=%LIB_FOLDER%\*"
-
-:: Optionally, user can define JVM options such as -Xmx
-set JAVA_OPTIONS=-Xmx1024m
-
-:: -----------------------------------------------------------------------------------------
-:: Parsing the arguments that are passed to the instrument.cmd script
-:: -----------------------------------------------------------------------------------------
+set APK_FILE=null
+set APK_INSTR_PROP_FILE=null
+set INSTALL_FOLDER=%~dp0
+set ANDROID_SDK_HOME=%~dp0\tools\win
 
 :parseargs
 if not "%1"=="" (
@@ -53,20 +36,85 @@ if not exist %APK_INSTR_PROP_FILE% (
     goto :usage
 )
 
+:: Optionally, user can define JVM options such as -Xmx
+
+set JAVA_OPTIONS=-Xmx1024m
+
 :: -----------------------------------------------------------------------------------------
-:: Find a suitable Java installation or exit
+:: Do java and jar exist and can we execute them?
 :: -----------------------------------------------------------------------------------------
 
-for /f "tokens=1* delims=" %%a in ('call "%TOOLS%\findjava.bat"') do (
-	:: react to JNF (Java not found) code with script termination
-	if %%a == JNF (
-		goto :end
-	) else (
-		:: print findjava.bat output
-		echo %%a
-		set JAVA_HOME=%%a
-	)
+"%JAVA_HOME%\bin\java.exe" -version 1> NUL 2> NUL
+if not %errorLevel%==0 goto :java_not_found
+
+for /F "tokens=1-3" %%A in ('"%JAVA_HOME%\bin\java.exe" -version 2^>^&1') do (
+    if /I "%%A %%B" == "java version" (
+        set "JavaVersion=%%~C"
+    )
 )
+
+for /F "tokens=2 delims=." %%I in ("%JavaVersion%") do set "jver=%%I"
+
+if %jver% LSS 8 (
+	goto :jdk_wrong_version
+)
+
+if exist "%JAVA_HOME%\bin\jar.exe" (
+    "%JAVA_HOME%\bin\jar.exe" -tf %APK_FILE% 1> NUL 2> NUL
+    if not %errorLevel%==0 goto :apk_file_invalid
+) else (
+    goto :jdk_not_found
+)
+
+:: -----------------------------------------------------------------------------------------
+:: Define the runtime environment based on our installation - keying off the path of this script
+:: -----------------------------------------------------------------------------------------
+
+set LIB_FOLDER=%INSTALL_FOLDER%\libs
+set ASMDEX_LIB=%LIB_FOLDER%\asmdex.jar
+set DDX_LIB=%LIB_FOLDER%\ddx1.26.jar
+set APKTOOL_LIB=%LIB_FOLDER%\apktool.jar
+set DEX_LIB=%LIB_FOLDER%\dx.jar
+set ADK_LIB=%LIB_FOLDER%\Dynatrace.jar
+set ADK_CB_LIB=%LIB_FOLDER%\Callbacks.jar
+set ADK_JSI_LIB=%LIB_FOLDER%\com.dynatrace.android.ext.jsi.jar
+set JACK_LIB=%LIB_FOLDER%\jack.jar
+set JILL_LIB=%LIB_FOLDER%\jill.jar
+set OKHTTP_LIB=%LIB_FOLDER%\com.dynatrace.android.okhttp.jar
+
+if ["%ADK_LIB%"]==[] goto :adk_file_missing
+
+:: -----------------------------------------------------------------------------------------
+:: Remove old framework dir for apktool
+:: -----------------------------------------------------------------------------------------
+"%JAVA_HOME%\bin\java" %JAVA_OPTIONS% -jar "%APKTOOL_LIB%" empty-framework-dir 1> NUL 2> NUL
+
+:: -----------------------------------------------------------------------------------------
+:: This variable points to a COMMA delimited list of libraries the instrumented code will need at runtime.
+:: These libraries are converted to Dex files and then merged into a given classes.dex\APK
+:: -----------------------------------------------------------------------------------------
+
+set DEPENDENT_LIBS=%ADK_CB_LIB%,%ADK_LIB%,%ADK_JSI_LIB%,%OKHTTP_LIB%
+
+:: -----------------------------------------------------------------------------------------
+:: Ensure Android SDK (aapt) tools are on our path
+:: -----------------------------------------------------------------------------------------
+
+set PATH=%ANDROID_SDK_HOME%;%PATH%
+
+:: -----------------------------------------------------------------------------------------
+:: Auto Instrumentation (dexify and merge) sub-processes need this environment variable to point to apktool.jar and dx.jar
+:: -----------------------------------------------------------------------------------------
+
+set TOOL_PATHS=%APKTOOL_LIB%;%DEX_LIB%
+
+:: -----------------------------------------------------------------------------------------
+:: Auto Instrumentation dependent libs\paths
+:: -----------------------------------------------------------------------------------------
+
+set RUNTIME_LIBS=%LIB_FOLDER%\Common.jar;%LIB_FOLDER%\CommonJava.jar;%LIB_FOLDER%\APKit.jar
+
+set CLASSPATH=%JACK_LIB%;%JILL_LIB%;%ASMDEX_LIB%;%DDX_LIB%;%DEX_LIB%;%RUNTIME_LIBS%
 
 :: -----------------------------------------------------------------------------------------
 :: Let's make sure we have everything we need
@@ -81,7 +129,7 @@ if not exist %APK_INSTR_PROP_FILE% goto :prop_file_missing
 :: Instrument the given APK
 :: -----------------------------------------------------------------------------------------
 
-"%JAVA_HOME%\bin\java" %JAVA_OPTIONS% -cp "%CLASSPATH%" com.dynatrace.android.instrumentation.AdkInstrumentor %APK_FILE% -prop %APK_INSTR_PROP_FILE% -wdir "%INSTALL_FOLDER%"
+"%JAVA_HOME%\bin\java" %JAVA_OPTIONS% -cp "%CLASSPATH%" com.dynatrace.android.instrumentation.AdkInstrumentor %APK_FILE% -dep "%DEPENDENT_LIBS%" -prop %APK_INSTR_PROP_FILE%
 
 if %errorLevel% neq 0 goto :instrumentation_failed
 
@@ -94,7 +142,6 @@ for /F "tokens=*" %%i in (%FULLFILE%) do set BASEFILE=%%~ni
 set APK_DIR=%BASEFILE%
 set APK_NAME_NO_EXT=%BASEFILE%
 for /F "tokens=*" %%i in (%FULLFILE%) do set BASEDIR=%%~dpi
-IF %BASEDIR:~-1%==\ SET BASEDIR=%BASEDIR:~0,-1%
 set APK_WORK_DIR=%BASEDIR%\%APK_DIR%
 
 set "INSTRUMENTED_APK=%APK_WORK_DIR%\dist\%APK_NAME_NO_EXT%.apk"
@@ -105,7 +152,7 @@ if not exist "%INSTRUMENTED_APK%" goto :instrumentation_failed
 
 :: -----------------------------------------------------------------------------------------
 
-"%WIN_TOOLS%\zipalign" -p -f 4 "%INSTRUMENTED_APK%" "%ZIPALIGNED_APK%"
+zipalign -f 4 "%INSTRUMENTED_APK%" "%ZIPALIGNED_APK%"
 
 if not exist "%ZIPALIGNED_APK%" goto :zipaligned_failed
 
@@ -115,7 +162,7 @@ if not exist "%ZIPALIGNED_APK%" goto :zipaligned_failed
 :sign_apk
 echo Signing non-release APK ...
 
-"%JAVA_HOME%\bin\java" -jar "%TOOLS%\apksigner.jar" sign --ks "%TOOLS%\debug.keystore" --ks-pass pass:android --out "%FINAL_APK%" "%ZIPALIGNED_APK%"
+"%JAVA_HOME%\bin\java" -jar "%LIB_FOLDER%\apksigner.jar" sign --ks "%LIB_FOLDER%\debug.keystore" --ks-pass pass:android --out "%FINAL_APK%" "%ZIPALIGNED_APK%" 
 if not exist "%FINAL_APK%" goto :apk_sign_failed
 
 echo -----------------------------------------------------------------------------------------
@@ -148,6 +195,21 @@ goto :end
 echo Usage: instrument.cmd apk=apk-file prop=instr-property-file
 goto :end
 
+:java_not_found
+echo Unable to find java.exe in %JAVA_HOME%\bin.
+echo Please set the JAVA_HOME variable in your environment to match the location of your Java Development Kit (JDK) installation.
+goto :end
+
+:jdk_not_found
+echo A Java Runtime Environment (JRE) was detected in %JAVA_HOME%. Java Development Kit (JDK) version 1.8 is required.
+echo Please set the JAVA_HOME variable in your environment to match the location of your JDK installation.
+goto :end
+
+:jdk_wrong_version
+echo An unsupported version of the Java Development Kit (JDK) was detected in %JAVA_HOME%. Java Development Kit (JDK) version 1.8 is required.
+echo Please set the JAVA_HOME variable in your environment to match the location of a supported JDK installation.
+goto :end
+
 :apk_file_invalid
 echo There was a problem verifying the integrity of your APK file.
 goto :end
@@ -165,5 +227,4 @@ echo Unable to sign %ZIPALIGNED_APK%.
 goto :end
 
 :end
-
 endlocal

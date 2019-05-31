@@ -12,7 +12,7 @@ import com.dynatrace.android.agent.Dynatrace;
 
 public class DynatraceCordovaPlugin extends CordovaPlugin {
 	
-	public static final String ACTION_UEM_END_SESSION = "endVisit";
+	public static final String ACTION_UEM_CAPTURE_STATUS = "getCaptureStatus"; 
 	
 	@Override
 	public void initialize(CordovaInterface cordova, CordovaWebView webView) {
@@ -23,10 +23,10 @@ public class DynatraceCordovaPlugin extends CordovaPlugin {
 	@Override
 	public boolean execute(String action, JSONArray args, CallbackContext callbackContext) throws JSONException {
 		try {
-			if (action.equals(ACTION_UEM_END_SESSION)) {
-				int status = Dynatrace.endVisit();
+			if (ACTION_UEM_CAPTURE_STATUS.equals(action)) {
+				int status = Dynatrace.getCaptureStatus();
 				callbackContext.success(String.valueOf(status));
-				return true;
+			    return true;
 			}
 			
 			return false;

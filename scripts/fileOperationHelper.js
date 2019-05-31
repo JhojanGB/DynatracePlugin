@@ -30,7 +30,7 @@ function checkIfFileExists(_file){
 	return new Promise(function(resolve, reject){
 		fs.stat(_file, function(err, stat) {
 			if(err){
-				reject("File not available: " + path.resolve(_file));
+				reject("File not available: " + _file);
 				return;
 			}
 			
@@ -44,7 +44,7 @@ function readTextFromFile(_file){
 	return new Promise(function(resolve, reject){
 		fs.readFile(_file, "utf8", (err, data) => {
 			if (err){
-				reject("Could not read the file: " + path.resolve(_file));
+				reject("Could not read the file: " + _file);
 			}
 			
 			resolve(data);
@@ -57,7 +57,7 @@ function writeTextToFile(_file, _text){
 	return new Promise(function(resolve, reject){
 		fs.writeFile(_file, _text, (err) => {
 			if(err){
-				reject(err + " Could not write to file: " + path.resolve(_file));
+				reject(err + " Could not write to file: " + _file);
 			}
 			
 			resolve(_file);
@@ -70,7 +70,7 @@ function isDirectory(_pathNew){
 	return new Promise(function(resolve, reject){
 		fs.stat(_pathNew, function(err, stats){
 			if(err){
-				logger.logMessageSync("Directory could not be read: " + path.resolve(_pathNew), logger.ERROR);
+				logger.logMessageSync("Directory could not be read: " + _pathNew, logger.ERROR);
 				reject(err);
 			}
 			
@@ -128,14 +128,14 @@ function _searchFilePatternInDirectory(_path, _foundFiles, _pattern, _filteredDi
 		// Read Dir - Which Files
 		fs.readdir(_path, function(err, files){
 			if(err){
-				reject("Directory could not be read: " + path.resolve(_path));
+				reject("Directory could not be read: " + _path);
 				return;
 			}
 			
 			// Simultanous Execution - Check If Directory or Not
 			let promiseArr = [];
 			for(let i = 0; i < files.length; i++){
-				promiseArr.push(isDirectory(path.join(_path, files[i])));
+				promiseArr.push(isDirectory(_path + "/" + files[i]));
 			}
 			
 			Promise.all(promiseArr).then(values => {
@@ -184,17 +184,17 @@ function copyFile(_srcPath, _destPath, _destFileName){
 		let destFile;
 		
 		if(_destFileName != undefined){
-			destFile = fs.createWriteStream(path.join(_destPath, _destFileName));
+			destFile = fs.createWriteStream(_destPath + paths.PATH_SEPERATOR + _destFileName);
 		}else{
-			destFile = fs.createWriteStream(path.join(_destPath, fileName));
+			destFile = fs.createWriteStream(_destPath + paths.PATH_SEPERATOR + fileName);
 		}
 		
 		destFile.on("error", function(err) {
 			reject(FILE_COPY_FAILED + err);
 		});
 		
-		destFile.on("close", function() {
-			resolve(path.join(_destPath, fileName));
+		destFile.on("close", function(ex) {
+			resolve(_destPath + paths.PATH_SEPERATOR + fileName);
 		});
 		
 		srcFile.pipe(destFile);
@@ -211,7 +211,7 @@ function cutFile(_srcPath, _destPath){
 // Create the a new directory
 function createDirectory(_dir){
 	return new Promise(function(resolve, reject){
-		fs.mkdir(_dir, function(){
+		fs.mkdir(_dir, function(callback){
 			resolve(_dir);
 		})
 	});

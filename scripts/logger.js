@@ -6,7 +6,6 @@
 var fs = require('fs');
 var files = require('./fileOperationHelper.js');
 var paths = require('./pathsConstants.js');
-var path = require('path');
 
 // Const
 var ERROR = 0;
@@ -33,15 +32,19 @@ function closeLogFile(){
 	
 	return files.checkIfFileExists(paths.getCurrentLogPath())
 	.then((_file) => {
-		return new Promise(function (resolve, reject){		
-			let logFileName = currentDate().split(":").join("-") + ".txt";
+		return new Promise(function (resolve, reject){
+			let date = new Date().toISOString();
+			date = date.replace("T", " ");
+			date = date.substring(0, date.lastIndexOf("."));
 			
-			fs.rename(_file, path.join(paths.getLogPath(), logFileName), (err) => {
+			let logFileName = date.replace(":", "-").replace(":", "-") + ".txt";
+			
+			fs.rename(_file, paths.getLogPath() + paths.PATH_SEPERATOR + logFileName, (err) => {
 				if(err){
 					reject("Renaming of the log file failed!");
 				}
 				
-				resolve(path.join(paths.getLogPath(), logFileName));
+				resolve(paths.getLogPath() + paths.PATH_SEPERATOR + logFileName);
 			})
 		});
 	})
@@ -54,6 +57,10 @@ function logMessageSync(_message, _logLevel){
 		return;
 	}
 
+	let date = new Date().toISOString();
+	date = date.replace("T", " ");
+	date = date.substring(0, date.lastIndexOf("."));
+	
 	try {
 		fs.mkdirSync(paths.getLogPath());
 	} catch(e) {
@@ -72,13 +79,7 @@ function logMessageSync(_message, _logLevel){
 		logString = "#NONE  ";
 	}
 	
-	let outputString = logString + "[" + currentDate() + "]: " + _message;
+	let outputString = logString + "[" + date + "]: " + _message;
 	console.log(outputString);
 	fs.appendFileSync(paths.getCurrentLogPath(), outputString + "\r\n");
-}
-
-function currentDate(){
-	let tzoffset = (new Date()).getTimezoneOffset() * 60000; 
-	let localISOTime = (new Date(Date.now() - tzoffset)).toISOString().slice(0, -5);
-	return localISOTime.replace("T", " ");
 }

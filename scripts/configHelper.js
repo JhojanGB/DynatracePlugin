@@ -4,8 +4,6 @@
  
 // Imports
 var fs = require('fs');
-var path = require('path');
-
 var files = require('./fileOperationHelper.js');
 var paths = require('./pathsConstants.js');
 var logger = require('./logger.js');
@@ -22,18 +20,11 @@ var DYNATRACE_JSAGENT_PROPERTIES = ["apitoken", "url"];
 // AGENT Properties
 var APPMON_MOBILEAGENT_PROPERTIES = ["DTXApplicationID", "DTXAgentStartupPath"];
 var DYNATRACE_SAAS_MOBILEAGENT_PROPERTIES = ["DTXApplicationID", "DTXAgentEnvironment"];
-var DYNATRACE_MOBILEAGENT_BEACON_PROPERTIES = ["DTXApplicationID", "DTXBeaconURL"];
 var DYNATRACE_MANAGED_MOBILEAGENT_PROPERTIES = ["DTXApplicationID", "DTXAgentEnvironment", "DTXManagedCluster", "DTXClusterURL"];
-var ALL_MOBILEAGENT_PROPERTIES = APPMON_MOBILEAGENT_PROPERTIES
-	.concat(DYNATRACE_SAAS_MOBILEAGENT_PROPERTIES)
-	.concat(DYNATRACE_MANAGED_MOBILEAGENT_PROPERTIES)
-	.concat(DYNATRACE_MOBILEAGENT_BEACON_PROPERTIES);
 
 // General Properties
-var PROPERTY_UPDATE = "auto_update";
-var PROPERTY_SEC_POLICY = "update_csp";
+var PROPERTY_UPDATE = "AUTO_UPDATE";
 var PROPERTY_UPDATE_DEFAULT = "false";
-var PROPERTY_CSP_DEFAULT = "true";
 
 // Platforms
 var PLATFORM_ALL = 0;
@@ -51,9 +42,6 @@ var CUSTOM_WWW_DIR = "custom_www_dir";
 var CUSTOM_HTML_FILE = "custom_html_file";
 var ALTERNATIVE_CONFIG = "--config=";
 
-// Errors
-var ERROR_CONFIG_NOT_AVAILABLE = -1;
-
 // Constants
 var allConfigs = {};
 
@@ -65,8 +53,6 @@ exports.PLATFORM_IOS = PLATFORM_IOS;
 exports.DYNATRACE_APPMON = DYNATRACE_APPMON;
 exports.DYNATRACE_MANAGED = DYNATRACE_MANAGED;
 exports.DYNATRACE_SAAS = DYNATRACE_SAAS;
-
-exports.ERROR_CONFIG_NOT_AVAILABLE = ERROR_CONFIG_NOT_AVAILABLE;
 
 exports.CUSTOM_SRC_DIR = CUSTOM_SRC_DIR;
 exports.CUSTOM_WWW_DIR = CUSTOM_WWW_DIR;
@@ -86,15 +72,15 @@ function checkIfAlternativeConfig(){
 		for(let i = 0; i < process.argv.length; i++){
 			if(process.argv[i].startsWith(ALTERNATIVE_CONFIG)){
 				let fileConfig = process.argv[i].substring(ALTERNATIVE_CONFIG.length);
-				fileConfig = path.join(paths.PATH_APPLICATION, fileConfig);
-				logger.logMessageSync("Found alternative configuration file: " + path.resolve(fileConfig), logger.INFO);
+				fileConfig = paths.PATH_APPLICATION + paths.PATH_SEPERATOR + fileConfig;
+				logger.logMessageSync("Found alternative configuration file: " + fileConfig, logger.INFO);
 				return files.checkIfFileExists(fileConfig)
 				.then((file) => {
 					process.env.CUSTOM_CONFIG = file;
 					resolve(file);
 					return;
 				})
-				.catch(() => {
+				.catch((err) => {
 					logger.logMessageSync("The alternative configuration file is not available! Check the path!", logger.ERROR);
 					reject("The alternative configuration file is not available! Check the path!");
 					return;
@@ -116,13 +102,6 @@ function readSettings(){
 	
 	return checkIfAlternativeConfig()
 	.then(() => {
-		return files.checkIfFileExists(paths.getConfigFilePath());
-	})
-	.catch(() => {
-		// Config File is not available. 
-		throw new Error(ERROR_CONFIG_NOT_AVAILABLE)
-	})
-	.then(() => {
 		return readJSAgentProperties();
 	})
 	.then((jsAgentConfig) => {
@@ -135,11 +114,14 @@ function readSettings(){
 	})
 	.then((agentConfig) => {
 		allConfigs.agentConfig = agentConfig;
-		allConfigs.type = parseTypeFromConfig(allConfigs);
-
+		allConfigs.type = parseTypeFromAgentConfig(agentConfig);
+		
 		// Check if Configs are valid
-		checkSettingProperties(allConfigs);
-		return allConfigs;
+		if(checkSettingProperties(allConfigs)){
+			return allConfigs;
+		}else{
+			throw("Settings of JSAgent or Mobile Agent are wrong! Setup not possible!");
+		}
 	})
 	.then(() => {
 		// Read all the paths
@@ -159,20 +141,26 @@ function readSettings(){
 
 		.then((wwwDir) => {
 			allConfigs.paths.wwwDir = wwwDir;
-			return paths.getCustomHTML(allConfigs.paths.srcDir);
+			return paths.getCustomHTML();
 		})
 
 		.then((customHTML) => {
 			allConfigs.paths.customHTML = customHTML;
+			return paths.getMainPath();
+		})
+
+		.then((mainPath) => {
+			allConfigs.paths.mainDir = mainPath;
 		});
 	})
+	
 	.then(() => {
 		return allConfigs;
 	});
 }
 
 // Read the settings for the api js agent download
-function readJSAgentProperties (){
+function readJSAgentProperties(){
 	return Promise.resolve()
 	// Check if a Credentials File was defined over a ENV variable
 	.then(() => {
@@ -181,7 +169,7 @@ function readJSAgentProperties (){
 		}else{
 			// Check if the user made a credentials file
 			return files.checkIfFileExists(paths.getCredentialsPath())
-			.catch(() => {
+			.catch((err) => {
 				// Credential file is not available. Continue
 				return false;
 			});
@@ -194,7 +182,7 @@ function readJSAgentProperties (){
 			return _customCredentialAvailable;
 		}else{
 			// Read Plugin
-			return paths.getConfigFilePath();
+			return files.checkIfFileExists(paths.getConfigFilePath());
 		}
 	})
 	.then((_file) => {return readPropertiesFromFile(_file, TAG_JSAGENT)})
@@ -203,14 +191,16 @@ function readJSAgentProperties (){
 
 // Read the DTX Properties
 function readAgentProperties(){
-	return readPropertiesFromFile(paths.getConfigFilePath(), TAG_MOBILE)
-	.then((_data) => {return parseAgentPropertyData(_data)})
-	.then((_data) => {return stripAgentPropertyData(_data)});
+	return files.checkIfFileExists(paths.getConfigFilePath())
+	.then((_file) => {return readPropertiesFromFile(_file, TAG_MOBILE)})
+	.then((_data) => {return parseAgentPropertyData(_data)});
 }
 
 // Read the config file of the application
 function readGeneralProperties(){
-	return readPropertiesFromFile(paths.getConfigFilePath(), TAG_GENERAL)
+	return Promise.resolve()
+	.then(() => {return files.checkIfFileExists(paths.getConfigFilePath())})
+	.then((_file) => {return readPropertiesFromFile(_file, TAG_GENERAL)})
 	.then((_data) => {return parseGeneralPropertyData(_data)});
 }
 
@@ -219,7 +209,7 @@ function readPropertiesFromFile(_file, _tag){
 	return new Promise(function(resolve, reject){
 		fs.readFile(_file, "utf8", (err, data) => {
 			if(err){
-				reject("File can not be read: " + path.resolve(_file));
+				reject("File can not be read: " + _file);
 				return;
 			}
 			
@@ -227,6 +217,7 @@ function readPropertiesFromFile(_file, _tag){
 			
 			if(pluginStart == -1){
 				// Tag is not even there 
+				logger.logMessageSync("The whole " + _tag + " tag is missing! Make sure the dynatrace.config is correct!", logger.WARNING);
 				resolve(false);
 			}else{
 				pluginStart = data.indexOf("\n", pluginStart);
@@ -244,46 +235,35 @@ function readPropertiesFromFile(_file, _tag){
 function checkSettingProperties(_allConfigs){
 	if(_allConfigs.type == DYNATRACE_APPMON){
 		// AppMon
-		checkPropertiesList(_allConfigs.jsAgentConfig, APPMON_JSAGENT_PROPERTIES, true);
-		checkPropertiesList(_allConfigs.agentConfig[0], APPMON_MOBILEAGENT_PROPERTIES, true);
-		checkPropertiesList(_allConfigs.agentConfig[1], APPMON_MOBILEAGENT_PROPERTIES, true);
+		return checkPropertiesList(_allConfigs.jsAgentConfig, APPMON_JSAGENT_PROPERTIES)
+			&& checkPropertiesList(_allConfigs.agentConfig[0], APPMON_MOBILEAGENT_PROPERTIES)
+			&& checkPropertiesList(_allConfigs.agentConfig[1], APPMON_MOBILEAGENT_PROPERTIES);
 	}else{
 		// Dynatrace
-		checkPropertiesList(_allConfigs.jsAgentConfig, DYNATRACE_JSAGENT_PROPERTIES, true);
-
-		if(_allConfigs.jsAgentConfig !== undefined && _allConfigs.jsAgentConfig.url.indexOf("jsInlineScript") == -1){
+		let returnValue = checkPropertiesList(_allConfigs.jsAgentConfig, DYNATRACE_JSAGENT_PROPERTIES);
+		
+		if(_allConfigs.jsAgentConfig.url.indexOf("jsInlineScript") == -1){
 			throw("Wrong Dynatrace JS Agent URL used! You have to use the URL which contains jsInlineScript!")
 		}
-
-		let propertiesAllowed = checkPropertiesList(_allConfigs.agentConfig[0], DYNATRACE_MOBILEAGENT_BEACON_PROPERTIES, false)
-			&& checkPropertiesList(_allConfigs.agentConfig[0], DYNATRACE_MOBILEAGENT_BEACON_PROPERTIES, false);
 		
-		if(!propertiesAllowed){
-			if(_allConfigs.type == DYNATRACE_SAAS){
-				checkPropertiesList(_allConfigs.agentConfig[0], DYNATRACE_SAAS_MOBILEAGENT_PROPERTIES, true);
-				checkPropertiesList(_allConfigs.agentConfig[1], DYNATRACE_SAAS_MOBILEAGENT_PROPERTIES, true);
-			}else{
-				checkPropertiesList(_allConfigs.agentConfig[0], DYNATRACE_MANAGED_MOBILEAGENT_PROPERTIES, true);
-				checkPropertiesList(_allConfigs.agentConfig[1], DYNATRACE_MANAGED_MOBILEAGENT_PROPERTIES, true);
-			}
+		if(_allConfigs.type == DYNATRACE_SAAS){
+			return returnValue && checkPropertiesList(_allConfigs.agentConfig[0], DYNATRACE_SAAS_MOBILEAGENT_PROPERTIES)
+			&& checkPropertiesList(_allConfigs.agentConfig[1], DYNATRACE_SAAS_MOBILEAGENT_PROPERTIES);
+		}else{
+			return returnValue && checkPropertiesList(_allConfigs.agentConfig[0], DYNATRACE_MANAGED_MOBILEAGENT_PROPERTIES)
+			&& checkPropertiesList(_allConfigs.agentConfig[1], DYNATRACE_MANAGED_MOBILEAGENT_PROPERTIES);;
 		}
 	}
+	
+	return false;
 }
 
 // Check a property set to a list of default properties
-function checkPropertiesList(_propertiesSet, _propertiesDefault, _throwError){
-	// It is now possible to have an empty list
-
-	if(_propertiesSet != undefined){
-		for(let i = 0; i < _propertiesDefault.length; i++){
-			let property = _propertiesDefault[i];
-			if(_propertiesSet[property] == undefined){
-				if(_throwError){
-					throw("Missing the property: " + property + ". Please Update the dynatrace.config!");
-				}else{
-					return false;
-				}
-			}
+function checkPropertiesList(_propertiesSet, _propertiesDefault){
+	for(let i = 0; i < _propertiesDefault.length; i++){
+		let property = _propertiesDefault[i];
+		if(_propertiesSet[property] == undefined){
+			throw("Missing the property: " + property + ". Please Update the dynatrace.config !");
 		}
 	}
 	
@@ -292,30 +272,21 @@ function checkPropertiesList(_propertiesSet, _propertiesDefault, _throwError){
 
 // Parse the properties into an object
 function parseJSAgentPropertyData(_lines){
-	if(!_lines){
-		return undefined;
-	}
-
 	let propertyData = {};
-	let property;
-
-	let propertyArray = APPMON_JSAGENT_PROPERTIES.concat(DYNATRACE_JSAGENT_PROPERTIES);
 	
 	for(let i = 0; i < _lines.length; i++){
 		_lines[i] = _lines[i].replace(/^\s\s*/, '');
 
 		if(!(_lines[i].startsWith("<!--"))){
 			// Values should be read
-			property = parsePropertyXML(_lines[i]);
-
-			for(let i = 0; i < propertyArray.length; i++){
-				if(property.name.toLowerCase() == propertyArray[i].toLowerCase()){
-					property.name = propertyArray[i];
-				}
-			}
+			let indexValueStart = _lines[i].indexOf(">");
+			let indexValueEnd = _lines[i].indexOf("<", indexValueStart);
 			
-			if(property.name != "" && property.value != ""){
-				propertyData[property.name] = property.value;
+			let propertyName = _lines[i].substring(1, indexValueStart);
+			let propertyValue = _lines[i].substring(indexValueStart + 1, indexValueEnd);
+			
+			if(propertyName != "" && propertyValue != ""){
+				propertyData[propertyName] = propertyValue;
 			}
 		}
 		
@@ -327,74 +298,33 @@ function parseJSAgentPropertyData(_lines){
 
 // Parse the general settings above into an object
 function parseGeneralPropertyData(_lines){
-	let propertyObject = getDefaultProperties(); 
-
+	let propertyObject = getDefaultProperties();
+			
 	for(let i = 0; i < _lines.length; i++){
-		let line = _lines[i].toLowerCase();
-		if(line.indexOf(PROPERTY_UPDATE) > -1){
-			propertyObject.autoUpdate = parsePropertyXML(line).value;
-		}else if(line.indexOf(PROPERTY_SEC_POLICY) > -1){
-			propertyObject.cspUpdate = parsePropertyXML(line).value;
+		if(_lines[i].indexOf(PROPERTY_UPDATE) > -1){
+			let indexValueStart = _lines[i].indexOf(">");
+			let indexValueEnd = _lines[i].indexOf("<", indexValueStart);
+			propertyObject.autoUpdate = _lines[i].substring(indexValueStart + 1, indexValueEnd);
 		}
 	}
 	
 	return propertyObject;
 }
 
-// Parse property from the XML file
-function parsePropertyXML(_line){
-	let property = {
-		name: "",
-		value: ""
-	};
-
-	if(_line.length == 0){
-		return property;
-	}
-
-	let indexValueStart = _line.indexOf(">");
-	let indexValueEnd = _line.indexOf("<", indexValueStart);
-
-	if(indexValueEnd != -1 && indexValueStart != -1 && indexValueStart < indexValueEnd){
-		property.name = _line.substring(1, indexValueStart);
-		property.value = _line.substring(indexValueStart + 1, indexValueEnd);
-	}else{
-		logger.logMessageSync("Property config line is formatted wrong! " + _line, logger.ERROR);
-	} 
-
-	return property;
-}
-
 // Returns default properties
 function getDefaultProperties(){
 	return {
-		autoUpdate: PROPERTY_UPDATE_DEFAULT,
-		cspUpdate: PROPERTY_CSP_DEFAULT
+		autoUpdate: PROPERTY_UPDATE_DEFAULT
 	}
-}
-
-// If both DTXClusterURL and DTXBeaconURL are detected - remove DTXClusterURL and others
-function stripAgentPropertyData(_data){
-	for(let i = 0; i < _data.length; i++){
-		if(_data[i].DTXBeaconURL != undefined){
-			delete _data[i].DTXAgentEnvironment; 
-			delete _data[i].DTXClusterURL;
-			delete _data[i].DTXManagedCluster;
-		}
-	}
-	
-	return _data;
 }
 
 function parseAgentPropertyData(_lines){
 	let propertyData = [{},{},{}];
-	let property;
-
+	
 	let platformType = PLATFORM_ALL;
 	
 	for(let i = 0; i < _lines.length; i++){
 		_lines[i] = _lines[i].replace(/^\s\s*/, '');
-		let _lineUpperCase = _lines[i].toUpperCase();
 
 		if(_lines[i].startsWith("<platform") || _lines[i].startsWith("</platform")){
 			// Platform
@@ -405,19 +335,15 @@ function parseAgentPropertyData(_lines){
 			}else{
 				platformType = PLATFORM_ALL;
 			}
-		}else if(_lineUpperCase.startsWith("<DTX")){
+		}else if(_lines[i].startsWith("<DTX")){
 			// New Property
-			property = parsePropertyXML(_lines[i]);
-
-			for(let i = 0; i < ALL_MOBILEAGENT_PROPERTIES.length; i++){
-				if(property.name.toLowerCase() == ALL_MOBILEAGENT_PROPERTIES[i].toLowerCase()){
-					property.name = ALL_MOBILEAGENT_PROPERTIES[i];
-				}
-			}
-
-			if(property.name != "" && property.value != ""){
-				propertyData[platformType][property.name] = property.value;
-			}
+			let indexValueStart = _lines[i].indexOf(">");
+			let indexValueEnd = _lines[i].indexOf("<", indexValueStart);
+			
+			let propertyName = _lines[i].substring(1, indexValueStart);
+			let propertyValue = _lines[i].substring(indexValueStart + 1, indexValueEnd);
+			
+			propertyData[platformType][propertyName] = propertyValue;
 		}
 		
 		// Other values will be ignored by the script
@@ -431,25 +357,12 @@ function parseAgentPropertyData(_lines){
 			}
 		}
 	}
-
+	
 	return [propertyData[1], propertyData[2]];
 }
 
 // Check which type is used
-function parseTypeFromConfig(_allConfig){
-	let type = parseTypeFromAgentConfig(_allConfig.agentConfig);
-	if(type === undefined){
-		type = parseTypeFromJSAgentConfig(_allConfig.jsAgentConfig);
-	}
-	return type;
-}
-
-// Check which type is used
 function parseTypeFromAgentConfig(_agentConfig){
-	if(_agentConfig === undefined || Object.keys(_agentConfig[PLATFORM_ANDROID - 1]).length == 0){
-		return undefined;
-	}
-
 	for(let key in _agentConfig[PLATFORM_ANDROID - 1]) {
 		if(key == "DTXAgentStartupPath"){
 			return DYNATRACE_APPMON;
@@ -458,21 +371,6 @@ function parseTypeFromAgentConfig(_agentConfig){
 			if(value == "TRUE"){
 				return DYNATRACE_MANAGED;
 			}
-		}
-	}
-	
-	return DYNATRACE_SAAS;
-}
-
-// Check which type is used
-function parseTypeFromJSAgentConfig(_jsAgentConfig){
-	if(_jsAgentConfig === undefined){
-		return undefined;
-	}
-
-	for(let key in _jsAgentConfig) {
-		if(key == "profile" || key == "username" || key == "password"){
-			return DYNATRACE_APPMON;
 		}
 	}
 	
